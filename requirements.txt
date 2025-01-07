@@ -1,0 +1,6 @@
+Django==5.1.4
+django-tailwind==3.8.0
+django-browser-reload==1.17.0
+django-debug-toolbar==4.4.6
+plaid-python==28.0.0
+httpx==0.28.1
