@@ -1,0 +1,232 @@
+<!-- templates/budgets/category_detail.html -->
+{% extends 'base.html' %}
+{% load budget_extras %}
+
+{% block title %}{{ category.name }} - Category Details{% endblock %}
+
+{% block content %}
+  <div class="mb-8">
+      <!-- Header -->
+      <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+          <div class="flex justify-between items-start">
+              <div>
+                  <div class="flex items-center gap-3">
+                      <h1 class="text-2xl font-bold text-gray-900">{{ category.name }}</h1>
+                      <span class="px-2 py-1 text-xs font-medium rounded-full 
+                          {% if category.is_income %}bg-green-100 text-green-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                          {% if category.is_income %}Income{% else %}Expense{% endif %}
+                      </span>
+                  </div>
+                  <p class="text-sm text-gray-600 mt-1">Created on {{ category.created_at|date:"M d, Y" }}</p>
+              </div>
+              <a href="{% url 'budgets:category-update' category.pk %}" 
+                class="bg-white hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 border border-gray-300 rounded-lg">
+                  Edit Category
+              </a>
+          </div>
+
+          <!-- Quick Stats -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+              <div class="bg-gray-50 rounded-lg p-4">
+                  <h3 class="text-sm font-medium text-gray-500">Total Budgeted</h3>
+                  <p class="text-xl font-semibold {% if category.is_income %}text-green-600{% else %}text-gray-900{% endif %}">
+                      ${{ stats.total_budgeted|floatformat:2 }}
+                  </p>
+              </div>
+              <div class="bg-gray-50 rounded-lg p-4">
+                  <h3 class="text-sm font-medium text-gray-500">Total Actual</h3>
+                  <p class="text-xl font-semibold {% if category.is_income %}text-green-600{% else %}text-gray-900{% endif %}">
+                      ${{ stats.total_actual|floatformat:2 }}
+                  </p>
+              </div>
+              <div class="bg-gray-50 rounded-lg p-4">
+                  <h3 class="text-sm font-medium text-gray-500">Active Budgets</h3>
+                  <p class="text-xl font-semibold text-gray-900">{{ stats.active_budgets }}</p>
+              </div>
+              <div class="bg-gray-50 rounded-lg p-4">
+                  <h3 class="text-sm font-medium text-gray-500">Total Transactions</h3>
+                  <p class="text-xl font-semibold text-gray-900">{{ stats.total_transactions }}</p>
+              </div>
+          </div>
+      </div>
+
+      <!-- Monthly Totals -->
+      <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">Monthly Totals</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {% for monthly in monthly_totals %}
+                  <div class="bg-gray-50 rounded-lg p-4">
+                      <h3 class="text-sm font-medium text-gray-500">{{ monthly.month|date:"M Y" }}</h3>
+                      <p class="text-lg font-semibold {% if monthly.total < 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                          ${{ monthly.total|abs_value|floatformat:2 }}
+                      </p>
+                  </div>
+              {% empty %}
+                  <div class="col-span-full text-center text-gray-500 py-4">
+                      No monthly data available
+                  </div>
+              {% endfor %}
+          </div>
+      </div>
+
+          <!-- Budget Allocations -->
+          <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Budget Allocations</h2>
+            {% if budget_categories %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Budget
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Period
+                                </th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Planned
+                                </th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actual
+                                </th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Remaining
+                                </th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for budget_category in budget_categories %}
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-gray-900">
+                                            {{ budget_category.budget.name }}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {{ budget_category.budget.start_date|date:"M d, Y" }} - 
+                                        {{ budget_category.budget.end_date|date:"M d, Y" }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium">
+                                        ${{ budget_category.planned_amount|floatformat:2 }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                        ${{ budget_category.actual_amount|floatformat:2 }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium
+                                        {% if budget_category.remaining_amount < 0 %}text-red-600
+                                        {% elif budget_category.remaining_amount > 0 %}text-green-600
+                                        {% else %}text-gray-900{% endif %}">
+                                        ${{ budget_category.remaining_amount|floatformat:2 }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <a href="{% url 'budgets:budget-detail' budget_category.budget.pk %}" 
+                                          class="text-blue-600 hover:text-blue-900">
+                                            View Budget
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-center text-gray-500 py-4">
+                    This category is not currently used in any budgets.
+                </p>
+            {% endif %}
+        </div>
+    
+        <!-- Recent Transactions -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-gray-900">Recent Transactions</h2>
+                <a href="{% url 'budgets:transaction-create' %}?category={{ category.pk }}" 
+                  class="text-blue-600 hover:text-blue-900 text-sm font-medium">
+                    Add Transaction
+                </a>
+            </div>
+    
+            {% if recent_transactions %}
+              <div class="overflow-x-auto">
+                  <table class="min-w-full divide-y divide-gray-200">
+                      <thead class="bg-gray-50">
+                          <tr>
+                              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Date
+                              </th>
+                              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Description
+                              </th>
+                              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Budget
+                              </th>
+                              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Amount
+                              </th>
+                              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Actions
+                              </th>
+                          </tr>
+                      </thead>
+                      <tbody class="bg-white divide-y divide-gray-200">
+                          {% for transaction in recent_transactions %}
+                              <tr class="hover:bg-gray-50">
+                                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                      {{ transaction.date|date:"M d, Y" }}
+                                  </td>
+                                  <td class="px-6 py-4 text-sm text-gray-900">
+                                      {{ transaction.description }}
+                                      {% if transaction.merchant_name %}
+                                          <span class="text-gray-500 text-xs block">
+                                              {{ transaction.merchant_name }}
+                                          </span>
+                                      {% endif %}
+                                  </td>
+                                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                      {{ transaction.budget.name }}
+                                  </td>
+                                  <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium
+                                      {% if transaction.amount < 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                                      ${{ transaction.amount|abs_value|floatformat:2 }}
+                                  </td>
+                                  <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                      <a href="{% url 'budgets:transaction-detail' transaction.pk %}" 
+                                        class="text-blue-600 hover:text-blue-900">
+                                          View
+                                      </a>
+                                  </td>
+                              </tr>
+                          {% endfor %}
+                      </tbody>
+                  </table>
+              </div>
+              {% if recent_transactions.count >= 10 %}
+              <div class="mt-4 text-center">
+                  <a href="{% url 'budgets:transaction-list' %}?category={{ category.pk }}" 
+                    class="text-blue-600 hover:text-blue-900 text-sm font-medium">
+                      View All Transactions →
+                  </a>
+              </div>
+          {% endif %}
+      {% else %}
+          <div class="text-center py-8">
+              <p class="text-gray-500 mb-4">No transactions recorded for this category yet.</p>
+              <a href="{% url 'budgets:transaction-create' %}?category={{ category.pk }}" 
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                  Add First Transaction
+              </a>
+          </div>
+      {% endif %}
+  </div>
+</div>
+
+  {% block extra_js %}
+  <script>
+  // Add any JavaScript needed for the category detail page
+  // For example, charts or interactive features
+  </script>
+  {% endblock %}
+{% endblock %}

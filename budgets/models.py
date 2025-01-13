@@ -5,6 +5,7 @@ from decimal import Decimal
 import uuid
 from django.db.models import Sum
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 
 
@@ -42,7 +43,15 @@ class Budget(models.Model):
     @property
     def total_actual(self):
         """Calculate total actual spending across all categories"""
-        return self.transactions.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+        # Get all categories in this budget
+        category_ids = self.budget_categories.values_list('category_id', flat=True)
+        
+        # Get transactions for these categories within the budget period
+        return Transaction.objects.filter(
+            category_id__in=category_ids,
+            transaction_date__gte=self.start_date,
+            transaction_date__lte=self.end_date
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
 
     @property
     def remaining_budget(self):
@@ -61,10 +70,12 @@ class Budget(models.Model):
         return abs(income - expenses) < Decimal('0.01')  # Using small decimal for float comparison
 
     def get_category_spending(self, category):
-        """Get actual spending for a specific category"""
-        return self.transaction_set.filter(
-            category=category).aggregate(
-            total=Sum('amount'))['total'] or Decimal('0.00')
+        """Get actual spending for a specific category within budget period"""
+        return Transaction.objects.filter(
+            category=category,
+            transaction_date__gte=self.start_date,
+            transaction_date__lte=self.end_date
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
 
     def transfer_amount(self, from_category, to_category, amount):
         """Transfer amount between budget categories"""
@@ -151,6 +162,33 @@ class RecurringExpense(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
+
+    @property
+    def next_due_date(self):
+        if not self.is_active:
+            return None
+
+        today = timezone.now().date()
+        if today < self.start_date:
+            return self.start_date
+
+        if self.end_date and today > self.end_date:
+            return None
+
+        frequency_map = {
+            'DAILY': lambda d: d + timedelta(days=1),
+            'WEEKLY': lambda d: d + timedelta(weeks=1),
+            'BIWEEKLY': lambda d: d + timedelta(weeks=2),
+            'MONTHLY': lambda d: d + relativedelta(months=1),
+            'QUARTERLY': lambda d: d + relativedelta(months=3),
+            'YEARLY': lambda d: d + relativedelta(years=1),
+        }
+
+        next_date = self.start_date
+        while next_date <= today:
+            next_date = frequency_map[self.frequency](next_date)
+        
+        return next_date
 
 
 class Transaction(models.Model):

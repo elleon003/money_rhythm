@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from budgets.models import Budget, Category, Transaction, RecurringExpense
-from django.contrib.auth.models import get_user_model
+from budgets.models import Budget, Category, Transaction, RecurringExpense, BudgetCategory
+from django.contrib.auth import get_user_model
 
 User = get_user_model()
 

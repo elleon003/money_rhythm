@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% load budget_extras %}
+
+{% block title %}Categories{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Categories</h1>
+            <p class="text-sm text-gray-600 mt-1">
+                Managing {{ category_count }} categories ({{ income_categories }} income, {{ expense_categories }} expense)
+            </p>
+        </div>
+        <a href="{% url 'budgets:category-create' %}" 
+           class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg">
+            Create Category
+        </a>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-lg shadow-sm p-4">
+            <h3 class="text-sm font-medium text-gray-500">Budgeted Income</h3>
+            <p class="text-2xl font-semibold text-green-600">${{ total_stats.total_income_budgeted|floatformat:2 }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm p-4">
+            <h3 class="text-sm font-medium text-gray-500">Actual Income</h3>
+            <p class="text-2xl font-semibold text-green-600">${{ total_stats.total_income_actual|floatformat:2 }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm p-4">
+            <h3 class="text-sm font-medium text-gray-500">Budgeted Expenses</h3>
+            <p class="text-2xl font-semibold text-red-600">${{ total_stats.total_expense_budgeted|floatformat:2 }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm p-4">
+            <h3 class="text-sm font-medium text-gray-500">Actual Expenses</h3>
+            <p class="text-2xl font-semibold text-red-600">${{ total_stats.total_expense_actual|floatformat:2 }}</p>
+        </div>
+    </div>
+
+    {% if categories %}
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Name
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Type
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Budgeted
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actual
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Difference
+                        </th>
+                        <th scope="col" class="relative px-6 py-3">
+                            <span class="sr-only">Actions</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for category in categories %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">
+                                    {{ category.name }}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {% if category.is_income %}bg-green-100 text-green-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                                    {% if category.is_income %}Income{% else %}Expense{% endif %}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                <span class="{% if category.is_income %}text-green-600{% else %}text-gray-900{% endif %}">
+                                    ${{ category.total_budgeted|floatformat:2 }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                <span class="{% if category.is_income %}text-green-600{% else %}text-gray-900{% endif %}">
+                                    ${{ category.total_spent|floatformat:2 }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                {% with difference=category.total_budgeted|sub:category.total_spent %}
+                                    <span class="{% if difference < 0 %}text-red-600{% elif difference > 0 %}text-green-600{% else %}text-gray-600{% endif %}">
+                                        ${{ difference|floatformat:2 }}
+                                    </span>
+                                {% endwith %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div class="flex justify-end space-x-3">
+                                    <a href="{% url 'budgets:category-detail' category.pk %}" 
+                                       class="text-blue-600 hover:text-blue-900">
+                                        View
+                                    </a>
+                                    <a href="{% url 'budgets:category-update' category.pk %}" 
+                                       class="text-gray-600 hover:text-gray-900">
+                                        Edit
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% else %}
+    <div class="text-center py-12 bg-white rounded-lg shadow-sm">
+        <h3 class="text-lg font-medium text-gray-900 mb-2">No categories yet</h3>
+        <p class="text-gray-500 mb-6">Create your first category to start organizing your budget.</p>
+        <a href="{% url 'budgets:category-create' %}" 
+           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+            Create Category
+        </a>
+    </div>
+{% endif %}
+</div>
+{% endblock %}
+

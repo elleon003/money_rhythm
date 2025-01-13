@@ -1,19 +1,98 @@
 {% load static tailwind_tags %}
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-    <title>Django Tailwind</title>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<meta http-equiv="X-UA-Compatible" content="ie=edge">
-		{% tailwind_css %}
-	</head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Budget App{% endblock %}</title>
+    {% tailwind_css %}
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <!-- Left side - Logo and Navigation -->
+                <div class="flex">
+                    <!-- Logo -->
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="{% url 'budgets:dashboard' %}" class="text-xl font-bold text-gray-800">
+                            Budget App
+                        </a>
+                    </div>
 
-	<body class="bg-gray-50 font-serif leading-normal tracking-normal">
-		<div class="container mx-auto">
-			<section class="flex items-center justify-center h-screen">
-				<h1 class="text-5xl">Django + Tailwind = ❤️</h1>
-			</section>
-		</div>
-	</body>
+                    <!-- Main Navigation -->
+                    {% if user.is_authenticated %}
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="{% url 'budgets:dashboard' %}" 
+                        class="{% if 'dashboard' in request.resolver_match.view_name %}text-blue-600{% else %}text-gray-500{% endif %} hover:text-blue-700 px-3 py-2 rounded-md text-sm font-medium">
+                            Dashboard
+                        </a>
+                        <a href="{% url 'budgets:budget-list' %}"class="{% if 'budget-list' in request.resolver_match.view_name %}text-blue-600{% else %}text-gray-500{% endif %} hover:text-blue-700 px-3 py-2 rounded-md text-sm font-medium">
+                            Budgets
+                        </a>
+                        <a href="{% url 'budgets:category-list' %}"
+                           class="{% if 'category-list' in request.resolver_match.view_name %}text-blue-600{% else %}text-gray-500{% endif %} hover:text-blue-700 px-3 py-2 rounded-md text-sm font-medium">
+                            Categories
+                        </a>
+                        <a href="{% url 'budgets:recurring-expense-list' %}"
+                           class="{% if 'recurring-expense-list' in request.resolver_match.view_name %}text-blue-600{% else %}text-gray-500{% endif %} hover:text-blue-700 px-3 py-2 rounded-md text-sm font-medium">
+                            Recurring
+                        </a>
+                        <a href="{% url 'budgets:transaction-list' %}"
+                           class="{% if 'transaction-list' in request.resolver_match.view_name %}text-blue-600{% else %}text-gray-500{% endif %} hover:text-blue-700 px-3 py-2 rounded-md text-sm font-medium">
+                            Transactions
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Right side - User Menu -->
+                <div class="flex items-center">
+                    {% if user.is_authenticated %}
+                        <span class="text-gray-700 text-sm mr-4">{{ user.email }}</span>
+                        <a href="{% url 'admin:logout' %}" 
+                           class="text-gray-500 hover:text-gray-700 text-sm font-medium">
+                            Logout
+                        </a>
+                    {% else %}
+                        <a href="{% url 'admin:login' %}" 
+                           class="text-gray-500 hover:text-gray-700 text-sm font-medium">
+                            Login
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            {% for message in messages %}
+                <div class="rounded-md p-4 {% if message.tags == 'success' %}bg-green-50 text-green-800{% elif message.tags == 'error' %}bg-red-50 text-red-800{% else %}bg-blue-50 text-blue-800{% endif %} mb-4">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white shadow-lg mt-auto">
+        <div class="max-w-7xl mx-auto px-4 py-6">
+            <p class="text-center text-gray-500 text-sm">
+                © {% now "Y" %} Budget App. All rights reserved.
+            </p>
+        </div>
+    </footer>
+
+    {% block extra_js %}
+    {% endblock %}
+</body>
 </html>

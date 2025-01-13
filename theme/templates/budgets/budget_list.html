@@ -1,0 +1,89 @@
+<!-- templates/budgets/budget_list.html -->
+{% extends 'base.html' %}
+
+{% block title %}My Budgets{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">My Budgets</h1>
+        <a href="{% url 'budgets:budget-create' %}" 
+           class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg">
+            Create New Budget
+        </a>
+    </div>
+
+    {% if budgets %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for budget in budgets %}
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-4">
+                            <h2 class="text-xl font-semibold text-gray-900">
+                                <a href="{% url 'budgets:budget-detail' budget.pk %}" 
+                                   class="hover:text-blue-600">
+                                    {{ budget.name }}
+                                </a>
+                            </h2>
+                            {% if budget.is_active %}
+                                <span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                                    Active
+                                </span>
+                            {% endif %}
+                        </div>
+
+                        <div class="space-y-2 mb-4">
+                            <p class="text-sm text-gray-600">
+                                {{ budget.start_date|date:"M d, Y" }} - {{ budget.end_date|date:"M d, Y" }}
+                            </p>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Planned:</span>
+                                <span class="font-medium text-gray-900">${{ budget.total_planned|floatformat:2 }}</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Actual:</span>
+                                <span class="font-medium text-gray-900">${{ budget.total_actual|floatformat:2 }}</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Remaining:</span>
+                                <span class="font-medium {% if budget.remaining_budget < 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                                    ${{ budget.remaining_budget|floatformat:2 }}
+                                </span>
+                            </div>
+                        </div>
+
+                        {% if budget.is_balanced %}
+                            <div class="text-green-600 text-sm flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                </svg>
+                                Balanced
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="bg-gray-50 px-6 py-3 flex justify-end space-x-3">
+                        <a href="{% url 'budgets:budget-detail' budget.pk %}" 
+                           class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                            View Details
+                        </a>
+                        <a href="{% url 'budgets:budget-update' budget.pk %}" 
+                           class="text-gray-600 hover:text-gray-800 text-sm font-medium">
+                            Edit
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-12 bg-white rounded-lg shadow-sm">
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No budgets yet</h3>
+            <p class="text-gray-500 mb-6">Create your first budget to start managing your finances.</p>
+            <a href="{% url 'budgets:budget-create' %}" 
+               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                Create Budget
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

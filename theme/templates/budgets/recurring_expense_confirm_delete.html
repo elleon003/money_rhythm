@@ -1,0 +1,16 @@
+{% extends 'budgets/base_delete_confirmation.html' %}
+
+{% block delete_title %}Delete Recurring Expense{% endblock %}
+
+{% block delete_message %}
+    Are you sure you want to delete the recurring expense "{{ object.name }}"?
+{% endblock %}
+
+{% block delete_warning %}
+    This will permanently delete this recurring expense. 
+    Existing transactions will not be affected.
+    This action cannot be undone.
+{% endblock %}
+
+{% block cancel_url %}{% url 'budgets:recurring-expense-detail' object.pk %}
+{% endblock %}

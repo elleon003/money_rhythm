@@ -1,0 +1,14 @@
+{% extends 'budgets/base_delete_confirmation.html' %}
+
+{% block delete_title %}Delete Budget{% endblock %}
+
+{% block delete_message %}
+    Are you sure you want to delete the budget "{{ object.name }}"?
+{% endblock %}
+
+{% block delete_warning %}
+    This will permanently delete this budget and all associated budget categories. 
+    This action cannot be undone.
+{% endblock %}
+
+{% block cancel_url %}{% url 'budgets:budget-detail' object.pk %}{% endblock %}

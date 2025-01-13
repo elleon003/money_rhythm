@@ -1,5 +1,8 @@
 from django import forms
+from django.contrib.auth import get_user_model
 from .models import Budget, Category, BudgetCategory, RecurringExpense, Transaction
+from django.db import models
+from django.db.models import Q
 
 class BudgetForm(forms.ModelForm):
     class Meta:
@@ -23,6 +26,15 @@ class BudgetForm(forms.ModelForm):
             })
         }
 
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)  # Remove user from kwargs before calling super
+        super().__init__(*args, **kwargs)
+        if self.user:
+            # Filter shared_with to exclude the owner and only show active users
+            self.fields['shared_with'].queryset = get_user_model().objects.exclude(
+                id=self.user.id
+            ).filter(is_active=True)
+
     def clean(self):
         cleaned_data = super().clean()
         start_date = cleaned_data.get('start_date')
@@ -45,6 +57,17 @@ class CategoryForm(forms.ModelForm):
                 'class': 'h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500'
             })
         }
+
+    def clean_name(self):
+        name = self.cleaned_data['name']
+        # Check if category name already exists for this user
+        if Category.objects.filter(
+            owner=self.instance.owner if self.instance.pk else self.initial.get('owner'),
+            name__iexact=name
+        ).exclude(pk=self.instance.pk if self.instance.pk else None).exists():
+            raise forms.ValidationError("A category with this name already exists.")
+        return name
+
 
 class BudgetCategoryForm(forms.ModelForm):
     class Meta:
@@ -113,19 +136,16 @@ class RecurringExpenseForm(forms.ModelForm):
 class TransactionForm(forms.ModelForm):
     class Meta:
         model = Transaction
-        fields = ['category', 'budget', 'amount', 'date', 'description', 'merchant_name']
+        fields = ['category', 'amount', 'transaction_date', 'description', 'merchant']
         widgets = {
             'category': forms.Select(attrs={
-                'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-            }),
-            'budget': forms.Select(attrs={
                 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
             }),
             'amount': forms.NumberInput(attrs={
                 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
                 'step': '0.01'
             }),
-            'date': forms.DateInput(attrs={
+            'transaction_date': forms.DateInput(attrs={
                 'type': 'date',
                 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
             }),
@@ -133,7 +153,7 @@ class TransactionForm(forms.ModelForm):
                 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
                 'placeholder': 'Transaction Description'
             }),
-            'merchant_name': forms.TextInput(attrs={
+            'merchant': forms.TextInput(attrs={
                 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
                 'placeholder': 'Merchant Name (Optional)'
             })
@@ -145,9 +165,18 @@ class TransactionForm(forms.ModelForm):
         if user:
             # Filter categories and budgets based on user access
             self.fields['category'].queryset = Category.objects.filter(owner=user)
-            self.fields['budget'].queryset = Budget.objects.filter(
-                Q(owner=user) | Q(shared_with=user)
-            ).distinct()
+            
+            # If budget_id is provided, further filter categories to those in the budget
+            if budget_id:
+                try:
+                    budget = Budget.objects.get(pk=budget_id)
+                    category_ids = budget.budget_categories.values_list('category_id', flat=True)
+                    self.fields['category'].queryset = self.fields['category'].queryset.filter(
+                        id__in=category_ids
+                    )
+                except Budget.DoesNotExist:
+                    pass
+
 
     def clean_amount(self):
         """
@@ -168,15 +197,15 @@ class TransactionForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        date = cleaned_data.get('date')
-        budget = cleaned_data.get('budget')
+        date = cleaned_data.get('transaction_date')
+        category = cleaned_data.get('category')
+        amount = cleaned_data.get('amount')
 
-        if date and budget:
-            # Validate transaction date falls within budget period
-            if date < budget.start_date or date > budget.end_date:
-                raise forms.ValidationError(
-                    "Transaction date must fall within the budget period "
-                    f"({budget.start_date} to {budget.end_date})"
-                )
-
+        if category and amount:
+            # Ensure amount is positive for income categories and negative for expense categories
+            if category.is_income and amount < 0:
+                cleaned_data['amount'] = abs(amount)
+            elif not category.is_income and amount > 0:
+                cleaned_data['amount'] = -abs(amount)
+                
         return cleaned_data

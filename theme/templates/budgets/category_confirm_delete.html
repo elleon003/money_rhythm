@@ -1,0 +1,16 @@
+{% extends 'budgets/base_delete_confirmation.html' %}
+
+{% block delete_title %}Delete Category{% endblock %}
+
+{% block delete_message %}
+    Are you sure you want to delete the category "{{ object.name }}"?
+{% endblock %}
+
+{% block delete_warning %}
+    This will permanently delete this category and remove it from all associated budgets.
+    Any transactions in this category will become uncategorized.
+    This action cannot be undone.
+{% endblock %}
+
+{% block cancel_url %}{% url 'budgets:category-detail' object.pk %}
+{% endblock %}
