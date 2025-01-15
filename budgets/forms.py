@@ -68,6 +68,9 @@ class CategoryForm(forms.ModelForm):
             raise forms.ValidationError("A category with this name already exists.")
         return name
 
+    def form_valid(self, form):
+        form.instance.owner = self.request.user
+        return super().form_valid(form)
 
 class BudgetCategoryForm(forms.ModelForm):
     class Meta:

@@ -26,6 +26,13 @@
 						Add Category
 					</a>
 				</div>
+				{% if user == budget.owner %}
+					<a
+					href="{% url 'budgets:budget-delete' pk=budget.pk %}"
+					class="bg-red-500 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg">
+					Delete Budget
+				</a>
+				{% endif %}
 			</div>
 
 			<!-- Budget Summary -->
