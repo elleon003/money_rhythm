@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'accounts',
     'api',
     'plaid_app',
+    'budgets',
+    'transactions',
 
     # 3rd Party Apps
     'tailwind',
