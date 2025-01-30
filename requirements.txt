@@ -1,0 +1,13 @@
+Django==5.1.5
+django-tailwind==3.8.0
+django-browser-reload==1.17.0
+django-allauth==65.3.1
+django-htmx==1.21.0
+plaid-python==28.1.0
+djangorestframework==3.15.2
+markdown==3.7
+django-filter==24.3
+
+
+# 'django-allauth[mfa]'  
+# "django-allauth[socialaccount]"

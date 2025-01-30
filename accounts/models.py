@@ -1,12 +1,12 @@
-from django.contrib.auth.models import AbstractUser, PermissionMixin
+from django.contrib.auth.models import AbstractUser, PermissionsMixin
 from django.db import models
 from django.utils import timezone
-from django.utls.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from .managers import CustomUserManager
 
 
-class User(AbstractUser, PermissionMixin):
+class User(AbstractUser, PermissionsMixin):
     email = models.EmailField(
         _('email address'), 
         unique=True,
