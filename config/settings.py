@@ -52,13 +52,7 @@ INSTALLED_APPS = [
     'django_browser_reload',
     'django_htmx',
     'rest_framework',
-
-    # Django Allauth
-    'django.contrib.sites',
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.google',
+    'django_table2',
 ]
 
 MIDDLEWARE = [
@@ -71,7 +65,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_browser_reload.middleware.BrowserReloadMiddleware',
     'django_htmx.middleware.HtmxMiddleware',
-    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
